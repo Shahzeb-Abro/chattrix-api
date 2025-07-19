@@ -32,7 +32,7 @@ connectDB();
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("Deployment successful 123");
+  res.send("Deployment successful");
 });
 
 app.use("/api/v1/auth", authRoutes);
