@@ -16,8 +16,15 @@ import globalErrorHandler from "./controllers/error.controller.js";
 import authRoutes from "./routes/auth.routes.js";
 import Message from "./models/message.model.js";
 import messageRoutes from "./routes/message.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 const app = express();
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -35,6 +42,22 @@ io.on("connection", (socket) => {
 
   socket.on("setup", (userId) => {
     users.set(userId, socket.id);
+    socket.userId = userId;
+    console.log(`✅ User ${userId} mapped to socket ${socket.id}`);
+  });
+
+  socket.on("typing", ({ receiverId }) => {
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("typing", { senderId: socket.userId });
+    }
+  });
+
+  socket.on("stop-typing", ({ receiverId }) => {
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("stop-typing", { senderId: socket.userId });
+    }
   });
 
   socket.on("private-message", async ({ senderId, receiverId, content }) => {
@@ -70,13 +93,6 @@ io.on("connection", (socket) => {
 
 app.use(passport.initialize());
 
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  })
-);
-
 app.use(cookieParser());
 
 app.set("view engine", "pug");
@@ -89,6 +105,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/users", userRoutes);
 
 app.use(globalErrorHandler);
 
