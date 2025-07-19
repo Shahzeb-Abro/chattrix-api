@@ -14,6 +14,8 @@ import cookieParser from "cookie-parser";
 
 import globalErrorHandler from "./controllers/error.controller.js";
 import authRoutes from "./routes/auth.routes.js";
+import Message from "./models/message.model.js";
+import messageRoutes from "./routes/message.routes.js";
 
 const app = express();
 const server = createServer(app);
@@ -24,8 +26,46 @@ const io = new Server(server, {
   },
 });
 
+const users = new Map();
+
+connectDB();
+
 io.on("connection", (socket) => {
   console.log("A user connected");
+
+  socket.on("setup", (userId) => {
+    users.set(userId, socket.id);
+  });
+
+  socket.on("private-message", async ({ senderId, receiverId, content }) => {
+    const message = await Message.create({
+      sender: senderId,
+      receiver: receiverId,
+      content,
+    });
+
+    const receiverSocket = users.get(receiverId);
+    const senderSocket = users.get(senderId);
+
+    const payload = {
+      message: message.content,
+      senderId,
+      receiverId,
+      createdAt: message.createdAt,
+    };
+
+    // Send to sender
+    if (senderSocket) io.to(senderSocket).emit("private-message", payload);
+
+    // Send to receiver
+    if (receiverSocket) io.to(receiverSocket).emit("private-message", payload);
+  });
+
+  socket.on("disconnect", () => {
+    for (const [key, value] of users.entries()) {
+      if (value === socket.id) users.delete(key);
+    }
+  });
 });
 
 app.use(passport.initialize());
@@ -41,8 +81,6 @@ app.use(cookieParser());
 
 app.set("view engine", "pug");
 
-connectDB();
-
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -50,6 +88,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/messages", messageRoutes);
 
 app.use(globalErrorHandler);
 
