@@ -61,6 +61,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("private-message", async ({ senderId, receiverId, content }) => {
+    console.log("senderId", senderId);
+    console.log("receiverId", receiverId);
+    console.log("content", content);
     const message = await Message.create({
       sender: senderId,
       receiver: receiverId,

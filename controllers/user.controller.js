@@ -27,3 +27,11 @@ export const getAllUsers = catchAsync(async (req, res) => {
     data: usersWithLastMessage,
   });
 });
+
+export const getUserById = catchAsync(async (req, res) => {
+  const user = await User.findById(req.params.id).select("-password");
+  res.status(200).json({
+    status: "success",
+    data: user,
+  });
+});
