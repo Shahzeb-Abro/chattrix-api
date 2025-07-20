@@ -155,8 +155,6 @@ export const changePassword = catchAsync(async (req, res, next) => {
 export const getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user._id).select("-password -__v");
 
-  console.log("User ", user);
-
   if (!user) {
     return next(new AppError("No such user exists", 404));
   }

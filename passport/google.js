@@ -13,15 +13,11 @@ passport.use(
       userProfileURL: "https://openidconnect.googleapis.com/v1/userinfo", // <-- add this line
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log("Profile ", profile);
       try {
         // Check if user already exists in our db
         const existingUser = await User.findOne({
           $or: [{ googleId: profile.id }, { email: profile._json.email }],
         });
-
-        console.log("Profile ", profile);
-        console.log("Existing User ", existingUser);
 
         if (existingUser) {
           if (existingUser.name !== profile._json.name)
