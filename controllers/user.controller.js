@@ -15,9 +15,20 @@ export const getAllUsers = catchAsync(async (req, res) => {
         ],
       }).sort({ createdAt: -1 });
 
+      let lastMessageWithSender = null;
+      if (lastMessage) {
+        lastMessageWithSender = {
+          ...lastMessage.toObject(),
+          sender:
+            String(lastMessage.sender) === String(req.user._id)
+              ? "You"
+              : user.name,
+        };
+      }
+
       return {
         ...user.toObject(),
-        lastMessage: lastMessage || null,
+        lastMessage: lastMessageWithSender,
       };
     })
   );

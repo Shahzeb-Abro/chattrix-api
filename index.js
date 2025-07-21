@@ -65,23 +65,35 @@ io.on("connection", (socket) => {
       sender: senderId,
       receiver: receiverId,
       content,
+      deliveredAt: new Date(),
+      isRead: false,
     });
+
+    const populatedMessage = await Message.findById(message._id)
+      .populate("sender", "name imgUrl")
+      .populate("receiver", "name imgUrl");
 
     const receiverSocket = users.get(receiverId);
     const senderSocket = users.get(senderId);
 
-    const payload = {
-      message: message.content,
-      senderId,
-      receiverId,
-      createdAt: message.createdAt,
-    };
-
     // Send to sender
-    if (senderSocket) io.to(senderSocket).emit("private-message", payload);
+    if (senderSocket)
+      io.to(senderSocket).emit("private-message", populatedMessage);
 
     // Send to receiver
-    if (receiverSocket) io.to(receiverSocket).emit("private-message", payload);
+    if (receiverSocket)
+      io.to(receiverSocket).emit("private-message", populatedMessage);
+  });
+
+  socket.on("mark-as-read", async ({ senderId, receiverId }) => {
+    console.log("mark-as-read", senderId, receiverId);
+    await Message.updateMany(
+      { receiver: receiverId, sender: senderId, isRead: false },
+      { $set: { isRead: true } }
+    );
+    const receiverSocket = users.get(receiverId);
+    if (receiverSocket)
+      io.to(receiverSocket).emit("mark-as-read", { senderId });
   });
 
   socket.on("disconnect", () => {

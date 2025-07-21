@@ -19,7 +19,11 @@ export const getMessages = catchAsync(async (req, res, next) => {
       { sender: senderId, receiver: receiverId },
       { sender: receiverId, receiver: senderId },
     ],
-  }).sort({ createdAt: 1 });
+  })
+    .sort({ createdAt: 1 })
+    .populate("sender", "name imgUrl")
+    .populate("receiver", "name imgUrl");
+
   res.status(200).json({
     status: "success",
     messages,
@@ -29,6 +33,19 @@ export const getMessages = catchAsync(async (req, res, next) => {
 export const deleteMessage = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   await Message.findByIdAndDelete(id);
+  res.status(200).json({
+    status: "success",
+  });
+});
+
+export const markAsRead = catchAsync(async (req, res, next) => {
+  const receiverId = new mongoose.Types.ObjectId(req.user._id);
+  const senderId = new mongoose.Types.ObjectId(req.params.id);
+
+  await Message.updateMany(
+    { receiver: receiverId, sender: senderId },
+    { $set: { isRead: true } }
+  );
   res.status(200).json({
     status: "success",
   });

@@ -14,6 +14,13 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    deliveredAt: {
+      type: Date,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
