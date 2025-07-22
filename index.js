@@ -92,9 +92,8 @@ io.on("connection", (socket) => {
       { receiver: receiverId, sender: senderId, isRead: false },
       { $set: { isRead: true } }
     );
-    const receiverSocket = users.get(receiverId);
-    if (receiverSocket)
-      io.to(receiverSocket).emit("mark-as-read", { senderId });
+    const senderSocket = users.get(senderId);
+    if (senderSocket) io.to(senderSocket).emit("mark-as-read", { receiverId });
   });
 
   socket.on("disconnect", () => {
