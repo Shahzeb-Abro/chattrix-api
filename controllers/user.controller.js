@@ -15,6 +15,13 @@ export const getAllUsers = catchAsync(async (req, res) => {
         ],
       }).sort({ createdAt: -1 });
 
+      // Count unread messages sent from this user to the logged-in user
+      const unreadCount = await Message.countDocuments({
+        sender: user._id,
+        receiver: req.user._id,
+        isRead: false,
+      });
+
       let lastMessageWithSender = null;
       if (lastMessage) {
         lastMessageWithSender = {
@@ -29,6 +36,7 @@ export const getAllUsers = catchAsync(async (req, res) => {
       return {
         ...user.toObject(),
         lastMessage: lastMessageWithSender,
+        unreadCount, // Add unread count here
       };
     })
   );
