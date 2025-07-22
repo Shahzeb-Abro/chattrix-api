@@ -47,6 +47,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("typing", ({ receiverId }) => {
+    console.log("typing", receiverId);
     const receiverSocket = users.get(receiverId);
     if (receiverSocket) {
       io.to(receiverSocket).emit("typing", { senderId: socket.userId });
