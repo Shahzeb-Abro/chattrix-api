@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema(
       maxlength: [50, "Name cannot be greater than 50 characters"],
       trim: true,
     },
+    isOnline: {
+      type: Boolean,
+    },
+    lastSeen: {
+      type: Date,
+    },
     email: {
       type: String,
       unique: true,

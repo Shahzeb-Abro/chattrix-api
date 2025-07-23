@@ -17,6 +17,7 @@ import authRoutes from "./routes/auth.routes.js";
 import Message from "./models/message.model.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import User from "./models/user.model.js";
 
 const app = express();
 app.use(
@@ -40,10 +41,17 @@ connectDB();
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  socket.on("setup", (userId) => {
+  socket.on("setup", async (userId) => {
     users.set(userId, socket.id);
     socket.userId = userId;
     console.log(`✅ User ${userId} mapped to socket ${socket.id}`);
+
+    await User.findByIdAndUpdate(userId, {
+      isOnline: true,
+      lastSeen: new Date(),
+    });
+
+    socket.broadcast.emit("user-online", { userId });
   });
 
   socket.on("typing", ({ receiverId }) => {
@@ -96,10 +104,15 @@ io.on("connection", (socket) => {
     if (senderSocket) io.to(senderSocket).emit("mark-as-read", { receiverId });
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     for (const [key, value] of users.entries()) {
       if (value === socket.id) users.delete(key);
     }
+    await User.findByIdAndUpdate(socket.userId, {
+      isOnline: false,
+      lastSeen: new Date(),
+    });
+    socket.broadcast.emit("user-offline", { userId: socket.userId });
   });
 });
 
